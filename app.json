@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Libra Translate",
+    "slug": "libra-translate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffee9e"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffee9e"
+      }
+    },
+    "web": {
+      "favicon": "./src/assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir que o Libra Translate acesse sua câmera"
+        }
+      ]
+    ]
+  }
+}

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dimensions, Linking, View } from "react-native";
+import { Camera, CameraType, FlashMode, AutoFocus } from "expo-camera";
 import { useIsFocused } from "@react-navigation/native";
 import {
   ActivityIndicator,
@@ -9,58 +10,93 @@ import {
   IconButton,
   Button,
 } from "react-native-paper";
-import { Camera, CameraType, FlashMode, AutoFocus } from "expo-camera";
 import { useSettings } from "../../contexts/SettingsContext";
+import SnackbarElement from "../../components/snackbar/Snackbar";
 
 export default function CameraView({ navigation }) {
   const isFocused = useIsFocused();
   const { isStatusBarHidden, toggleStatusBar } = useSettings();
-
   const [hasPermission, setHasPermission] = useState(null);
   const [visibleDialog, setVisibleDialog] = useState(true);
   const { width: winWidth, height: winHeight } = Dimensions.get("window");
+  const cameraRef = useRef(null);
   const [cameraType, setCameraType] = useState(CameraType.back);
   const [cameraFlashMode, setCameraFlashMode] = useState(FlashMode.off);
+  const [visibleSnackbar, setVisibleSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [record, setRecord] = useState(null);
 
-  const requestCameraPermissions = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasPermission(status === "granted");
-  };
+  const showDialog = () => setVisibleDialog(true);
 
-  const onCameraReady = () => {
-    console.log("onCameraReady");
-  };
+  const hideDialog = () => setVisibleDialog(false);
 
-  const toggleCameraType = () => {
-    setCameraType((current) =>
-      current === CameraType.back ? CameraType.front : CameraType.back
-    );
-  };
-
-  const toggleCameraFlashMode = () => {
-    setCameraFlashMode((current) =>
-      current === FlashMode.off ? FlashMode.on : FlashMode.off
-    );
-  };
-
-  const navigateToTranslateScreen = () => {
+  const navigateToTranslateScreen = () =>
     navigation.navigate("drawerScreens", { screen: "translate" });
-  };
 
   const handleCogButton = () => {
     navigateToTranslateScreen();
     Linking.openSettings();
   };
 
-  const handleCloseButton = () => {
-    navigateToTranslateScreen();
-  };
+  const toggleCameraType = () =>
+    setCameraType((current) =>
+      current === CameraType.back ? CameraType.front : CameraType.back
+    );
 
   const handleCameraFlipButton = () => toggleCameraType();
 
-  const showDialog = () => setVisibleDialog(true);
+  const toggleCameraFlashMode = () =>
+    setCameraFlashMode((current) =>
+      current === FlashMode.off ? FlashMode.on : FlashMode.off
+    );
 
-  const hideDialog = () => setVisibleDialog(false);
+  const onToggleSnackBar = () => setVisibleSnackbar(!visibleSnackbar);
+
+  const onDismissSnackBar = () => setVisibleSnackbar(false);
+
+  const startRecord = async () => {
+    if (cameraRef) {
+      try {
+        const data = await cameraRef.current.recordAsync();
+        console.log(data.uri);
+      } catch (e) {
+        setSnackbarMessage(
+          "Algo deu errado ao iniciar a gravação. Por favor, tente novamente mais tarde."
+        );
+        onToggleSnackBar();
+      }
+    }
+  };
+
+  const onCameraReady = () => {
+    startRecord();
+  };
+
+  const navigateAndResetSnackbarMessage = () => {
+    setSnackbarMessage("");
+    navigateToTranslateScreen();
+  };
+
+  const stopRecord = () => {
+    if (cameraRef) {
+      try {
+        cameraRef.current.stopRecording();
+      } catch (e) {
+        setSnackbarMessage("Algo deu errado ao finalizar a gravação.");
+        onToggleSnackBar();
+      }
+    }
+  };
+
+  const handleCloseButton = () => {
+    stopRecord();
+    navigateToTranslateScreen();
+  };
+
+  const onMountError = () => {
+    stopRecord();
+    navigateAndResetSnackbarMessage();
+  };
 
   useEffect(() => {
     requestCameraPermissions();
@@ -77,6 +113,15 @@ export default function CameraView({ navigation }) {
       showDialog();
     }
   }, [hasPermission]);
+
+  const requestCameraPermissions = async () => {
+    const cameraPermission = await Camera.requestCameraPermissionsAsync();
+    const microphonePermission =
+      await Camera.requestMicrophonePermissionsAsync();
+    setHasPermission(
+      cameraPermission.granted === true && microphonePermission.granted === true
+    );
+  };
 
   if (hasPermission === null) {
     return (
@@ -147,7 +192,9 @@ export default function CameraView({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: "#000000" }}>
       <Camera
+        ref={cameraRef}
         onCameraReady={onCameraReady}
+        onMountError={onMountError}
         style={{
           flex: 1,
           position: "absolute",
@@ -196,6 +243,15 @@ export default function CameraView({ navigation }) {
           </View>
         </View>
       </Camera>
+      <SnackbarElement
+        visible={visibleSnackbar}
+        onDismissSnackBar={onDismissSnackBar}
+        label="Fechar"
+        labelColor="#ffffff"
+        takeAction={navigateAndResetSnackbarMessage}
+        backgroundColor="#000000"
+        message={snackbarMessage}
+      />
     </View>
   );
 }

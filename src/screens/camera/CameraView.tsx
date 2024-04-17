@@ -57,9 +57,10 @@ export default function CameraView({ navigation }) {
   const startRecord = async () => {
     if (cameraRef) {
       try {
+        // const data = await cameraRef.current.recordAsync({ quality: "4:3" });
         const data = await cameraRef.current.recordAsync();
         console.log(data.uri);
-      } catch (e) {
+      } catch (error) {
         setSnackbarMessage(
           "Algo deu errado ao iniciar a gravação. Por favor, tente novamente mais tarde."
         );
@@ -103,10 +104,10 @@ export default function CameraView({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (isFocused && !isStatusBarHidden) {
+    if (isFocused && hasPermission && !isStatusBarHidden) {
       toggleStatusBar();
     }
-  }, [isFocused, isStatusBarHidden]);
+  }, [isFocused, hasPermission, isStatusBarHidden]);
 
   useEffect(() => {
     if (hasPermission === false) {
@@ -209,7 +210,7 @@ export default function CameraView({ navigation }) {
         <View
           style={{
             flex: 1,
-            justifyContent: "flex-end",
+            justifyContent: "flex-start",
             alignItems: "center",
             marginBottom: 20,
           }}
@@ -219,7 +220,6 @@ export default function CameraView({ navigation }) {
               flexDirection: "row",
               justifyContent: "space-between",
               width: "100%",
-              paddingHorizontal: 20,
             }}
           >
             <IconButton
@@ -229,17 +229,31 @@ export default function CameraView({ navigation }) {
               onPress={handleCloseButton}
             />
             <IconButton
-              icon="camera-flip"
-              iconColor="#ffffff"
-              size={50}
-              onPress={handleCameraFlipButton}
-            />
-            <IconButton
               icon={cameraFlashMode === FlashMode.off ? "flash-off" : "flash"}
               iconColor="#ffffff"
               size={50}
               onPress={toggleCameraFlashMode}
             />
+          </View>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <View style={{ flexDirection: "column", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <IconButton
+                icon="camera-flip"
+                iconColor="#ffffff"
+                size={50}
+                onPress={handleCameraFlipButton}
+              />
+            </View>
           </View>
         </View>
       </Camera>

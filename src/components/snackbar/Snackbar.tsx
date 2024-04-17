@@ -18,7 +18,9 @@ export default function SnackbarElement(props: {
         label: props.label,
         labelStyle: { color: props.labelColor },
         onPress: () => {
-          props.takeAction();
+          if (props.takeAction) {
+            props.takeAction();
+          }
         },
       }}
       style={{

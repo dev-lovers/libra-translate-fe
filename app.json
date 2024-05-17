@@ -30,7 +30,7 @@
         {
           "cameraPermission": "Allow Libra Translate to access your camera",
           "microphonePermission": "Allow Libra Translate to access your microphone",
-          "recordAudioAndroid": true
+          "recordAudioAndroid": false
         }
       ]
     ]

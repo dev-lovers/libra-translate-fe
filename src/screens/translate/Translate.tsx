@@ -52,7 +52,11 @@ export default function Translate({ navigation }) {
   }, [isFocused, isStatusBarHidden]);
 
   return (
-    <ScrollView overScrollMode="never" showsVerticalScrollIndicator={false}>
+    <ScrollView
+      overScrollMode="never"
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, padding: 10 }}
+    >
       <View style={{ flex: 1, justifyContent: "flex-start", padding: 5 }}>
         <View style={{ flexDirection: "column", padding: 5 }}>
           <View style={{ flexDirection: "column", padding: 5 }}>

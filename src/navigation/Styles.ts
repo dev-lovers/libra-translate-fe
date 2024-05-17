@@ -47,7 +47,8 @@ const stackScreenAuthScreensOptions: StackNavigationOptions = {
 const stackScreenCameraOptions = (): StackNavigationOptions => {
   return {
     ...stackScreenOptions,
-    headerShown: false,
+    // headerShown: false,
+    title: null,
   };
 };
 

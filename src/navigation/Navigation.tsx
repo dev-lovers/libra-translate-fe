@@ -1,6 +1,7 @@
 import React, { ComponentType, useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -8,14 +9,11 @@ import {
   DrawerNavigationOptions,
 } from "@react-navigation/drawer";
 import { Provider as PaperProvider, DefaultTheme } from "react-native-paper";
+import { recoverData } from "../utils/main";
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
-import CustomDrawer from "../components/custom-drawer/CustomDrawer";
-import SignIn from "../screens/auth/SignIn";
-import SignUp from "../screens/auth/SignUp";
-import Home from "../screens/home/Home";
-import Translate from "../screens/translate/Translate";
-import { default as Camera } from "../screens/camera/CameraView";
+import { CustomDrawer } from "../components/main";
+import { SignUp, SignIn, Home, Translate, Camera } from "../screens/main";
 import {
   stackScreenSignInOptions,
   stackScreenSignUpOptions,
@@ -25,7 +23,6 @@ import {
   stackScreenCameraOptions,
   stackScreenCameraScreensOptions,
 } from "./Styles";
-import "react-native-gesture-handler";
 
 const PaperProviderTheme = {
   ...DefaultTheme,
@@ -202,7 +199,25 @@ const CameraScreens = () => {
 
 export default function Navigation() {
   const { isStatusBarHidden } = useSettings();
-  const { userIsLoggedIn } = useAuth();
+  const { authenticate } = useAuth();
+
+  const getUserData = async () => {
+    const userDataStr = await recoverData("userData");
+
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+
+      authenticate(userData);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await getUserData();
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <PaperProvider theme={PaperProviderTheme}>

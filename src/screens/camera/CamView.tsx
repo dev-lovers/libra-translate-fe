@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Linking, View } from "react-native";
+import { Linking, View, Dimensions } from "react-native";
 import { Camera, CameraType, CameraView } from "expo-camera";
 import {
   ActivityIndicator,
@@ -10,24 +10,22 @@ import {
   IconButton,
   Button,
 } from "react-native-paper";
-import { SnackbarElement } from "../../components/main";
+import { LoadingDots } from "@mrakesh0608/react-native-loading-dots";
+
+const windowHeight = Dimensions.get("window").height;
+const cardHeight = windowHeight * 0.6;
 
 export default function CamView({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
+  const [cameraIsReady, setCameraIsReady] = useState<boolean>(false);
   const [visibleDialog, setVisibleDialog] = useState<boolean>(false);
-  const [facing, setFacing] = useState<CameraType>("back");
+  const [facing, setFacing] = useState<CameraType>("front");
   const cameraRef = useRef(null);
-  const [record, setRecord] = useState(null);
-  const [visibleSnackbar, setVisibleSnackbar] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>("");
+  const [intervalId, setIntervalId] = useState(null);
 
   const showDialog = () => setVisibleDialog(true);
 
   const hideDialog = () => setVisibleDialog(false);
-
-  const onToggleSnackBar = () => setVisibleSnackbar(!visibleSnackbar);
-
-  const onDismissSnackBar = () => setVisibleSnackbar(false);
 
   const navigateToTranslateScreen = () =>
     navigation.navigate("drawerScreens", { screen: "translate" });
@@ -37,45 +35,64 @@ export default function CamView({ navigation }) {
     Linking.openSettings();
   };
 
+  const requestCameraPermissions = async () => {
+    const cameraPermission = await Camera.requestCameraPermissionsAsync();
+    const microphonePermission =
+      await Camera.requestMicrophonePermissionsAsync();
+
+    setHasPermission(
+      cameraPermission.granted === true && microphonePermission.granted === true
+    );
+  };
+
+  const onCameraReady = () => {
+    setCameraIsReady(true);
+  };
+
   const toggleCameraFacing = () =>
     setFacing((current) => (current === "back" ? "front" : "back"));
 
   const handleCameraFlipButton = () => toggleCameraFacing();
 
-  const startRecord = async () => {
-    if (cameraRef) {
-      try {
-        // const data = await cameraRef.current.recordAsync({ quality: "4:3" });
-        const data = await cameraRef.current.recordAsync();
-        console.log(data.uri);
-      } catch (error) {
-        setSnackbarMessage(
-          "Algo deu errado ao iniciar a gravação. Por favor, tente novamente mais tarde."
-        );
-        onToggleSnackBar();
-      }
-    }
-  };
-
-  const onCameraReady = () => {
-    startRecord();
-  };
-
-  const requestCameraPermissions = async () => {
-    const cameraPermission = await Camera.requestCameraPermissionsAsync();
-
-    setHasPermission(cameraPermission.granted === true);
+  const startStreaming = async () => {
+    // if (cameraRef.current) {
+    //   try {
+    //     const options = {
+    //       quality: 0.5,
+    //       base64: true,
+    //       onPictureSaved: (data) => {
+    //         console.log(data.base64);
+    //       },
+    //     };
+    //     const id = setInterval(async () => {
+    //       await cameraRef.current.takePictureAsync(options);
+    //     }, 100);
+    //     setIntervalId(id);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }
   };
 
   useEffect(() => {
     requestCameraPermissions();
-  }, []);
 
-  useEffect(() => {
     if (hasPermission === false) {
       showDialog();
     }
-  }, [hasPermission]);
+
+    if (cameraIsReady) {
+      startStreaming();
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+
+      setCameraIsReady(false);
+    };
+  }, [hasPermission, cameraIsReady]);
 
   if (hasPermission === null) {
     return (
@@ -144,34 +161,65 @@ export default function CamView({ navigation }) {
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "flex-start",
-        padding: 5,
-      }}
-    >
+    <View style={{ flex: 1 }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "flex-start",
+          alignItems: "center",
+          padding: 5,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "column",
+            alignItems: "center",
+            padding: 5,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 5,
+            }}
+          >
+            <LoadingDots animation="typing" size={15} />
+          </View>
+        </View>
+      </View>
       <View
         style={{
           flex: 1,
           justifyContent: "flex-end",
           flexDirection: "column",
           alignItems: "center",
-          padding: 5,
         }}
       >
-        <Card style={{ width: "90%", borderRadius: 10, overflow: "hidden" }}>
-          <View style={{ height: 300 }}>
+        <Card
+          style={{
+            height: cardHeight,
+            width: "95%",
+            borderRadius: 10,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ height: "100%" }}>
             <CameraView
+              style={{ flex: 1 }}
               ref={cameraRef}
               onCameraReady={onCameraReady}
               facing={facing}
-              style={{ flex: 1 }}
+              videoQuality="720p"
             />
           </View>
         </Card>
-        <View style={{ flexDirection: "column", alignItems: "center" }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{ flexDirection: "column", alignItems: "center", padding: 5 }}
+        >
+          <View
+            style={{ flexDirection: "row", alignItems: "center", padding: 5 }}
+          >
             <IconButton
               icon="camera-flip"
               iconColor="#000000"
@@ -181,19 +229,6 @@ export default function CamView({ navigation }) {
           </View>
         </View>
       </View>
-      {/* <View
-        style={{ flexDirection: "column", alignItems: "center", padding: 5 }}
-      >
-        <SnackbarElement
-          visible={visibleSnackbar}
-          onDismissSnackBar={onDismissSnackBar}
-          label="Fechar"
-          labelColor="#ffffff"
-          takeAction={navigateAndResetSnackbarMessage}
-          backgroundColor="#000000"
-          message={snackbarMessage}
-        />
-      </View> */}
     </View>
   );
 }

@@ -1,6 +1,7 @@
+import { Camera, CameraType, CameraView } from "expo-camera";
+import * as FileSystem from "expo-file-system";
 import React, { useState, useEffect, useRef } from "react";
 import { Linking, View, Dimensions } from "react-native";
-import { Camera, CameraType, CameraView } from "expo-camera";
 import {
   ActivityIndicator,
   Card,
@@ -11,6 +12,7 @@ import {
   Button,
 } from "react-native-paper";
 import { LoadingDots } from "@mrakesh0608/react-native-loading-dots";
+import { uploadImage } from "../../services/main";
 
 const windowHeight = Dimensions.get("window").height;
 const cardHeight = windowHeight * 0.6;
@@ -21,7 +23,6 @@ export default function CamView({ navigation }) {
   const [visibleDialog, setVisibleDialog] = useState<boolean>(false);
   const [facing, setFacing] = useState<CameraType>("front");
   const cameraRef = useRef(null);
-  const [intervalId, setIntervalId] = useState(null);
 
   const showDialog = () => setVisibleDialog(true);
 
@@ -54,24 +55,27 @@ export default function CamView({ navigation }) {
 
   const handleCameraFlipButton = () => toggleCameraFacing();
 
-  const startStreaming = async () => {
-    // if (cameraRef.current) {
-    //   try {
-    //     const options = {
-    //       quality: 0.5,
-    //       base64: true,
-    //       onPictureSaved: (data) => {
-    //         console.log(data.base64);
-    //       },
-    //     };
-    //     const id = setInterval(async () => {
-    //       await cameraRef.current.takePictureAsync(options);
-    //     }, 100);
-    //     setIntervalId(id);
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      try {
+        const options = {
+          quality: 0.5,
+        };
+
+        const imageData = await cameraRef.current.takePictureAsync(options);
+        // const fileContent = await FileSystem.readAsStringAsync(imageData.uri, {
+        //   encoding: FileSystem.EncodingType.Base64,
+        // });
+        const fileName = `image_${Date.now()}.jpg`;
+
+        const formData = new FormData();
+        formData.append("image", imageData.uri, fileName);
+
+        await uploadImage(formData);
+      } catch (error) {
+        console.log(error);
+      }
+    }
   };
 
   useEffect(() => {
@@ -80,19 +84,7 @@ export default function CamView({ navigation }) {
     if (hasPermission === false) {
       showDialog();
     }
-
-    if (cameraIsReady) {
-      startStreaming();
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-
-      setCameraIsReady(false);
-    };
-  }, [hasPermission, cameraIsReady]);
+  }, [hasPermission]);
 
   if (hasPermission === null) {
     return (
@@ -204,13 +196,12 @@ export default function CamView({ navigation }) {
             overflow: "hidden",
           }}
         >
-          <View style={{ height: "100%" }}>
+          <View style={{ height: cardHeight }}>
             <CameraView
               style={{ flex: 1 }}
               ref={cameraRef}
               onCameraReady={onCameraReady}
               facing={facing}
-              videoQuality="720p"
             />
           </View>
         </Card>
@@ -220,6 +211,13 @@ export default function CamView({ navigation }) {
           <View
             style={{ flexDirection: "row", alignItems: "center", padding: 5 }}
           >
+            <IconButton icon="flashlight-off" iconColor="#000000" size={60} />
+            <IconButton
+              icon="camera-iris"
+              iconColor="#000000"
+              size={60}
+              onPress={async () => await takePicture()}
+            />
             <IconButton
               icon="camera-flip"
               iconColor="#000000"

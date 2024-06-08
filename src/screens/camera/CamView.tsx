@@ -63,9 +63,6 @@ export default function CamView({ navigation }) {
         };
 
         const imageData = await cameraRef.current.takePictureAsync(options);
-        // const fileContent = await FileSystem.readAsStringAsync(imageData.uri, {
-        //   encoding: FileSystem.EncodingType.Base64,
-        // });
         const fileName = `image_${Date.now()}.jpg`;
 
         const formData = new FormData();
@@ -209,7 +206,13 @@ export default function CamView({ navigation }) {
           style={{ flexDirection: "column", alignItems: "center", padding: 5 }}
         >
           <View
-            style={{ flexDirection: "row", alignItems: "center", padding: 5 }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%",
+              padding: 5,
+            }}
           >
             <IconButton icon="flashlight-off" iconColor="#000000" size={60} />
             <IconButton

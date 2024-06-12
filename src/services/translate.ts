@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseUrl = "http://127.0.0.1:5000/predict";
+const baseUrl = "http://localhost:8000/predict";
 
 const uploadImage = async (formData: FormData) => {
   try {
@@ -12,8 +12,7 @@ const uploadImage = async (formData: FormData) => {
 
     return response.data;
   } catch (error) {
-    console.error("Erro ao fazer upload da imagem: ", error);
-    throw error;
+    throw new Error(error.message);
   }
 };
 

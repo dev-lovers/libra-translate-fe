@@ -1,4 +1,4 @@
-import { Camera, CameraType, CameraView } from "expo-camera";
+import { Camera, CameraType, FlashMode, CameraView } from "expo-camera";
 import * as FileSystem from "expo-file-system";
 import React, { useState, useEffect, useRef } from "react";
 import { Linking, View, Dimensions } from "react-native";
@@ -11,21 +11,27 @@ import {
   IconButton,
   Button,
 } from "react-native-paper";
-import { LoadingDots } from "@mrakesh0608/react-native-loading-dots";
-import { uploadImage } from "../../services/main";
+import uploadImage from "../../services/translate";
+
+interface ImageData {
+  height: number;
+  uri: string;
+  width: number;
+}
 
 const windowHeight = Dimensions.get("window").height;
 const cardHeight = windowHeight * 0.6;
 
 export default function CamView({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
-  const [cameraIsReady, setCameraIsReady] = useState<boolean>(false);
   const [visibleDialog, setVisibleDialog] = useState<boolean>(false);
-  const [facing, setFacing] = useState<CameraType>("front");
   const cameraRef = useRef(null);
+  const [cameraIsReady, setCameraIsReady] = useState<boolean>(false);
+  const [facing, setFacing] = useState<CameraType>("front");
+  const [flash, setFlash] = useState<FlashMode>("off");
+  const [letter, setLetter] = useState<string>("");
 
   const showDialog = () => setVisibleDialog(true);
-
   const hideDialog = () => setVisibleDialog(false);
 
   const navigateToTranslateScreen = () =>
@@ -53,22 +59,57 @@ export default function CamView({ navigation }) {
   const toggleCameraFacing = () =>
     setFacing((current) => (current === "back" ? "front" : "back"));
 
-  const handleCameraFlipButton = () => toggleCameraFacing();
+  const toggleCameraflash = () =>
+    setFlash((current) => (current === "off" ? "on" : "off"));
+
+  const sendImage = async (formData: FormData) => {
+    try {
+      const response = await uploadImage(formData);
+
+      const predictedLetter: string = response.predicted_letters[0];
+      setLetter(predictedLetter);
+
+      showDialog();
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  const manipulateImage = async (imageData: ImageData) => {
+    try {
+      const formData = new FormData();
+
+      const response = await fetch(imageData.uri);
+      const blob = await response.blob();
+      const image = new File([blob], `image_${Date.now()}.jpg`, {
+        type: `image/${imageData.uri.slice(-3)}`,
+      });
+      formData.append("image", image);
+
+      // const fileInfo = await FileSystem.getInfoAsync(imageData.uri);
+      // const fileBlob = await FileSystem.readAsStringAsync(imageData.uri, {
+      //   encoding: FileSystem.EncodingType.Base64,
+      // });
+      // const type = fileInfo.uri.split(".").pop();
+      // const blob = new Blob([fileBlob], { type: `image/${type}` });
+      // formData.append("image", blob, "image.jpg");
+
+      await sendImage(formData);
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
 
   const takePicture = async () => {
-    if (cameraRef.current) {
+    if (cameraIsReady && cameraRef.current) {
       try {
         const options = {
           quality: 0.5,
         };
 
         const imageData = await cameraRef.current.takePictureAsync(options);
-        const fileName = `image_${Date.now()}.jpg`;
 
-        const formData = new FormData();
-        formData.append("image", imageData.uri, fileName);
-
-        await uploadImage(formData);
+        await manipulateImage(imageData);
       } catch (error) {
         console.log(error);
       }
@@ -81,7 +122,11 @@ export default function CamView({ navigation }) {
     if (hasPermission === false) {
       showDialog();
     }
-  }, [hasPermission]);
+
+    if (!visibleDialog) {
+      setLetter("");
+    }
+  }, [hasPermission, visibleDialog]);
 
   if (hasPermission === null) {
     return (
@@ -154,32 +199,6 @@ export default function CamView({ navigation }) {
       <View
         style={{
           flex: 1,
-          justifyContent: "flex-start",
-          alignItems: "center",
-          padding: 5,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "column",
-            alignItems: "center",
-            padding: 5,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              padding: 5,
-            }}
-          >
-            <LoadingDots animation="typing" size={15} />
-          </View>
-        </View>
-      </View>
-      <View
-        style={{
-          flex: 1,
           justifyContent: "flex-end",
           flexDirection: "column",
           alignItems: "center",
@@ -195,10 +214,11 @@ export default function CamView({ navigation }) {
         >
           <View style={{ height: cardHeight }}>
             <CameraView
-              style={{ flex: 1 }}
               ref={cameraRef}
               onCameraReady={onCameraReady}
               facing={facing}
+              flash={flash}
+              style={{ flex: 1 }}
             />
           </View>
         </Card>
@@ -214,7 +234,12 @@ export default function CamView({ navigation }) {
               padding: 5,
             }}
           >
-            <IconButton icon="flashlight-off" iconColor="#000000" size={60} />
+            <IconButton
+              icon={flash === "off" ? "flashlight-off" : "flashlight"}
+              iconColor="#000000"
+              size={60}
+              onPress={toggleCameraflash}
+            />
             <IconButton
               icon="camera-iris"
               iconColor="#000000"
@@ -225,11 +250,30 @@ export default function CamView({ navigation }) {
               icon="camera-flip"
               iconColor="#000000"
               size={60}
-              onPress={handleCameraFlipButton}
+              onPress={toggleCameraFacing}
             />
           </View>
         </View>
       </View>
+      <Portal>
+        <Dialog visible={visibleDialog} onDismiss={hideDialog}>
+          <Dialog.Title>Tradução do Sinal</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Confira a tradução da letra correspondente ao sinal em LIBRAS que
+              você fez:
+            </Text>
+            <Text
+              style={{ textAlign: "center", fontSize: 50, fontWeight: "bold" }}
+            >
+              {letter}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideDialog}>Fechar</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

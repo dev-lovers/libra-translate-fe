@@ -1,16 +1,24 @@
 import axios from "axios";
 
-const baseUrl = "http://localhost:8000/predict";
+interface Data {
+  filename: string;
+  content: string;
+}
 
-const uploadImage = async (formData: FormData) => {
+const baseUrl = "http://192.168.100.94:8000/predict_v2";
+
+const uploadImage = async (data: Data) => {
   try {
-    const response = await axios.post(baseUrl, formData, {
+    const response = await axios.post(baseUrl, data, {
       headers: {
-        "Content-Type": "multipart/form-data",
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
     });
 
-    return response.data;
+    if (response.status === 200) {
+      return response.data;
+    }
   } catch (error) {
     throw new Error(error.message);
   }

@@ -14,6 +14,7 @@ import {
 import uploadImage from "../../services/translate";
 
 interface ImageData {
+  base64: string;
   height: number;
   uri: string;
   width: number;
@@ -29,10 +30,11 @@ export default function CamView({ navigation }) {
   const [cameraIsReady, setCameraIsReady] = useState<boolean>(false);
   const [facing, setFacing] = useState<CameraType>("front");
   const [flash, setFlash] = useState<FlashMode>("off");
+  const [hasError, setHasError] = useState<boolean>(false);
   const [letter, setLetter] = useState<string>("");
 
-  const showDialog = () => setVisibleDialog(true);
-  const hideDialog = () => setVisibleDialog(false);
+  const showDialog = () => setVisibleDialog(!visibleDialog);
+  const hideDialog = () => setVisibleDialog(!visibleDialog);
 
   const navigateToTranslateScreen = () =>
     navigation.navigate("drawerScreens", { screen: "translate" });
@@ -62,39 +64,23 @@ export default function CamView({ navigation }) {
   const toggleCameraflash = () =>
     setFlash((current) => (current === "off" ? "on" : "off"));
 
-  const sendImage = async (formData: FormData) => {
+  const sendImage = async (imageData: ImageData) => {
     try {
-      const response = await uploadImage(formData);
+      const data = {
+        filename: `image_${Date.now()}.${imageData.uri.slice(-3)}`,
+        content: imageData.base64,
+      };
 
-      const predictedLetter: string = response.predicted_letters[0];
-      setLetter(predictedLetter);
+      const response = await uploadImage(data);
+
+      if (response) {
+        const predictedLetter: string = response.predicted_letters[0];
+        setLetter(predictedLetter);
+      } else {
+        setHasError(!hasError);
+      }
 
       showDialog();
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  };
-
-  const manipulateImage = async (imageData: ImageData) => {
-    try {
-      const formData = new FormData();
-
-      const response = await fetch(imageData.uri);
-      const blob = await response.blob();
-      const image = new File([blob], `image_${Date.now()}.jpg`, {
-        type: `image/${imageData.uri.slice(-3)}`,
-      });
-      formData.append("image", image);
-
-      // const fileInfo = await FileSystem.getInfoAsync(imageData.uri);
-      // const fileBlob = await FileSystem.readAsStringAsync(imageData.uri, {
-      //   encoding: FileSystem.EncodingType.Base64,
-      // });
-      // const type = fileInfo.uri.split(".").pop();
-      // const blob = new Blob([fileBlob], { type: `image/${type}` });
-      // formData.append("image", blob, "image.jpg");
-
-      await sendImage(formData);
     } catch (error) {
       throw new Error(error.message);
     }
@@ -105,11 +91,13 @@ export default function CamView({ navigation }) {
       try {
         const options = {
           quality: 0.5,
+          base64: true,
+          onPictureSaved: (data: ImageData) => {
+            sendImage(data);
+          },
         };
 
-        const imageData = await cameraRef.current.takePictureAsync(options);
-
-        await manipulateImage(imageData);
+        await cameraRef.current.takePictureAsync(options);
       } catch (error) {
         console.log(error);
       }
@@ -122,11 +110,7 @@ export default function CamView({ navigation }) {
     if (hasPermission === false) {
       showDialog();
     }
-
-    if (!visibleDialog) {
-      setLetter("");
-    }
-  }, [hasPermission, visibleDialog]);
+  }, [hasPermission]);
 
   if (hasPermission === null) {
     return (
@@ -235,18 +219,21 @@ export default function CamView({ navigation }) {
             }}
           >
             <IconButton
+              disabled={cameraIsReady && visibleDialog}
               icon={flash === "off" ? "flashlight-off" : "flashlight"}
               iconColor="#000000"
               size={60}
               onPress={toggleCameraflash}
             />
             <IconButton
+              disabled={cameraIsReady && visibleDialog}
               icon="camera-iris"
               iconColor="#000000"
               size={60}
               onPress={async () => await takePicture()}
             />
             <IconButton
+              disabled={cameraIsReady && visibleDialog}
               icon="camera-flip"
               iconColor="#000000"
               size={60}
@@ -256,18 +243,30 @@ export default function CamView({ navigation }) {
         </View>
       </View>
       <Portal>
-        <Dialog visible={visibleDialog} onDismiss={hideDialog}>
+        <Dialog visible={visibleDialog}>
           <Dialog.Title>Tradução do Sinal</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodyMedium">
-              Confira a tradução da letra correspondente ao sinal em LIBRAS que
-              você fez:
-            </Text>
-            <Text
-              style={{ textAlign: "center", fontSize: 50, fontWeight: "bold" }}
-            >
-              {letter}
-            </Text>
+            {hasError ? (
+              <Text variant="bodyMedium" style={{ color: "red" }}>
+                Ocorreu um erro. Tente novamente.
+              </Text>
+            ) : (
+              <>
+                <Text variant="bodyMedium">
+                  Confira a tradução da letra correspondente ao sinal em LIBRAS
+                  que você fez:
+                </Text>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 50,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {letter}
+                </Text>
+              </>
+            )}
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={hideDialog}>Fechar</Button>

@@ -49,13 +49,6 @@ export default function Home() {
     },
     {
       id: 2,
-      title: "LIBRAS",
-      image: "https://picsum.photos/700",
-      description:
-        "LIBRAS (Língua Brasileira de Sinais) é a língua de sinais usada pela comunidade surda no Brasil. É reconhecida oficialmente como meio de comunicação e expressão.",
-    },
-    {
-      id: 3,
       title: "História da LIBRAS",
       image:
         "https://www.handtalk.me/br/wp-content/uploads/sites/8/2017/04/122-capa-blogpost-historia-libras.png",
@@ -63,7 +56,7 @@ export default function Home() {
         "A LIBRAS tem suas origens no século XIX, com influências da língua de sinais francesa. Foi reconhecida oficialmente no Brasil em 2002 pela Lei nº 10.436.",
     },
     {
-      id: 4,
+      id: 3,
       title: "Importância das Linguagens de Sinais",
       image:
         "https://academiadelibras.com/wp-content/uploads/2019/12/Dificuldades-dos-surdos-na-sociedade_1-1.jpg",
@@ -71,7 +64,7 @@ export default function Home() {
         "As linguagens de sinais permitem que pessoas surdas se comuniquem efetivamente, promovendo inclusão social, acesso à educação e participação em diversas atividades sociais.",
     },
     {
-      id: 5,
+      id: 4,
       title: "Estrutura Gramatical da LIBRAS",
       image:
         "https://png.pngtree.com/png-clipart/20230824/original/pngtree-different-hand-gestures-on-blackboard-hand-sign-language-art-vector-png-image_10638901.png",
@@ -79,7 +72,7 @@ export default function Home() {
         "A LIBRAS possui uma estrutura gramatical própria, com regras específicas para a formação de frases, expressão de conceitos abstratos e uso de verbos.",
     },
     {
-      id: 6,
+      id: 5,
       title: "Variações Regionais da LIBRAS",
       image:
         "https://static.todamateria.com.br/upload/ma/pa/mapadasregioesdobrasil2-cke.jpg",
@@ -87,14 +80,7 @@ export default function Home() {
         "Assim como as línguas faladas, a LIBRAS também possui variações regionais, com diferenças na forma de sinalizar certos conceitos e palavras.",
     },
     {
-      id: 7,
-      title: "Aquisição da Linguagem de Sinais por Crianças",
-      image: "https://picsum.photos/700",
-      description:
-        "Crianças surdas podem adquirir a linguagem de sinais naturalmente, assim como crianças ouvintes adquirem a língua falada, por meio da interação com falantes nativos.",
-    },
-    {
-      id: 8,
+      id: 6,
       title: "Desafios da Comunicação com Surdos",
       image:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFTIvGOXWmWXzs0K0NyZDoORKW-y4-KONgbc7Mk715wg&s",

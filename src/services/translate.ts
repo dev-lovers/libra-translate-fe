@@ -5,7 +5,7 @@ interface Data {
   content: string;
 }
 
-const baseUrl = "http://192.168.100.94:8000/predict_v2";
+const baseUrl = "http://localhost:8000/predict_v2";
 
 const uploadImage = async (data: Data) => {
   try {

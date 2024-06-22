@@ -16,13 +16,13 @@ Este é o frontend do projeto Libra Translate, desenvolvido como parte da avalia
 1. Clone o repositório
 
    ```sh
-   git clone https://github.com/dev-lovers/libra-translate-frontend.git
+   git clone https://github.com/dev-lovers/libra-translate-app.git
    ```
 
 2. Instale as dependências
 
    ```sh
-   cd libra-translate-frontend
+   cd libra-translate-app
    npm install
    ```
 
